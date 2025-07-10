@@ -1,6 +1,6 @@
 # SavorNet: Ethiopian Cuisine Classifier 🍽️🇪🇹
 
-**DensResNet** is a state-of-the-art deep learning web application for classifying 11 traditional Ethiopian dishes. It leverages an adaptive attention fusion mechanism that combines features from DenseNet121 and ResNet50V2 using a two-layer attention network for optimal accuracy and interpretability.
+**SavorNet** is a state-of-the-art deep learning web application for classifying 11 traditional Ethiopian dishes. It leverages an adaptive attention fusion mechanism that combines features from DenseNet121 and ResNet50V2 using a two-layer attention network for optimal accuracy and interpretability.
 
 ---
 

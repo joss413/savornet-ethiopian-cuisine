@@ -13,7 +13,7 @@ st.markdown("Classifies traditional Ethiopian dishes using deep learning (DenseN
 
 # Constants
 HF_TOKEN = st.secrets["hf_token"]
-REPO_ID = "yosephn/SavorNet-Food"
+REPO_ID = "Jossi18/Ethiopian_cusine_classification"
 IMG_SIZE = 512
 CLASS_NAMES = [
     "Beyaynet", "Chechebsa", "Doro Wot", "Dulet", "Enkulal Firfir",

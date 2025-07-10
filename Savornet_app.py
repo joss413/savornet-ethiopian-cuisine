@@ -6,6 +6,7 @@ import os
 import matplotlib.pyplot as plt
 from PIL import Image
 import zipfile
+
 # App Configuration
 st.set_page_config(page_title="SavorNet: Ethiopian Food Classifier", layout="wide")
 st.title("🍲 SavorNet: Ethiopian Cuisine Classifier")
@@ -27,13 +28,11 @@ ENSEMBLE_ACC = 88.31
 SAVORNET_ACC = 92.20
 SAVORNET_TOP2 = 96.10
 
-# Model loader
+# Cached Model Loader
 @st.cache_resource
 def load_models():
     dense_path = "dense_final_model.h5"
     resnet_path = "resnet50v2_final4_model.h5"
-
-    # Change this to your zipped SavedModel filename
     savornet_zip = "singletest_attention_model_tf.zip"
     savornet_dir = "singletest_attention_model_tf"
 
@@ -43,76 +42,76 @@ def load_models():
     savornet_url = f"https://huggingface.co/{REPO_ID}/resolve/main/{savornet_zip}"
 
     try:
-        # Download DenseNet model if missing
+        # Download DenseNet
         if not os.path.exists(dense_path):
-            st.info("🔽 Downloading DenseNet model from Hugging Face...")
+            st.info("🔽 Downloading DenseNet model...")
             with requests.get(dense_url, headers=headers, stream=True) as r:
                 r.raise_for_status()
                 with open(dense_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
+                    for chunk in r.iter_content(8192):
                         f.write(chunk)
 
-        # Download ResNet model if missing
+        # Download ResNet
         if not os.path.exists(resnet_path):
-            st.info("🔽 Downloading ResNet model from Hugging Face...")
+            st.info("🔽 Downloading ResNet model...")
             with requests.get(resnet_url, headers=headers, stream=True) as r:
                 r.raise_for_status()
                 with open(resnet_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
+                    for chunk in r.iter_content(8192):
                         f.write(chunk)
 
-        # Download and extract SavorNet TF SavedModel zip if missing
+        # Download and extract SavorNet if missing
         if not os.path.exists(savornet_dir):
-            st.info("🔽 Downloading SavorNet TF SavedModel zip from Hugging Face...")
+            st.info("🔽 Downloading SavorNet model...")
             with requests.get(savornet_url, headers=headers, stream=True) as r:
                 r.raise_for_status()
                 with open(savornet_zip, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
+                    for chunk in r.iter_content(8192):
                         f.write(chunk)
-            st.info("📂 Extracting SavorNet model...")
+            st.info("📂 Extracting SavorNet...")
             with zipfile.ZipFile(savornet_zip, "r") as zip_ref:
                 zip_ref.extractall(".")
-            os.remove(savornet_zip)  # clean up zip after extraction
+            os.remove(savornet_zip)
 
         # Load models
         densenet = tf.keras.models.load_model(dense_path)
         resnet = tf.keras.models.load_model(resnet_path)
-        savornet = tf.keras.models.load_model(savornet_dir)  # <-- load SavedModel dir
+        savornet = tf.keras.models.load_model(savornet_dir)
 
         return densenet, resnet, savornet
 
     except Exception as e:
-        st.error(f"❌ Failed to load models from Hugging Face: {e}")
+        st.error(f"❌ Failed to load models: {e}")
         st.stop()
 
-# Preprocessing
+# Image Preprocessing
 def preprocess_image(image):
     image = image.resize((IMG_SIZE, IMG_SIZE))
     array = tf.keras.preprocessing.image.img_to_array(image)
     array = array / 255.0
     return np.expand_dims(array, axis=0)
 
-# Top-K predictions
+# Get top-k predictions
 def get_top_k(preds, k=2):
     top_indices = np.argsort(preds)[::-1][:k]
     return [(CLASS_NAMES[i], preds[i]) for i in top_indices]
 
-# Load models
+# Load models once
 densenet, resnet, savornet = load_models()
 
 # Sidebar Info
 st.sidebar.title("ℹ️ Info")
-st.sidebar.markdown("""
+st.sidebar.markdown(f"""
 **Models Used**
-- **DenseNet121**
-- **ResNet50V2**
-- **SavorNet (Attention Fusion)**
+- DenseNet121
+- ResNet50V2
+- SavorNet (Attention Fusion)
 
 **Test Accuracies**
-- DenseNet121: 83.12%
-- ResNet50V2: 86.36%
-- Ensemble: 88.31%
-- **SavorNet**: **92.20%**
+- DenseNet121: {DENSENET_ACC:.2f}%
+- ResNet50V2: {RESNET_ACC:.2f}%
+- Ensemble: {ENSEMBLE_ACC:.2f}%
+- **SavorNet**: **{SAVORNET_ACC:.2f}%**
 """)
 
 # Image Upload
@@ -132,49 +131,42 @@ if uploaded:
     top1_idx = np.argmax(pred_ensemble)
     pred_label = CLASS_NAMES[top1_idx]
 
-    # Show results
+    # Result Display
     st.markdown("### 🔍 Prediction Result")
-    st.success(f"**Ensemble Model Prediction:** {pred_label} ({pred_ensemble[top1_idx]*100:.2f}%)")
+    st.success(f"**Ensemble Prediction:** {pred_label} ({pred_ensemble[top1_idx]*100:.2f}%)")
 
-    st.subheader("🧠 SavorNet (Adaptive Attention) Prediction (Top-2)")
-    for name, prob in get_top_k(pred_savornet):
+    st.subheader("🧠 SavorNet (Top-2 Attention Predictions)")
+    for name, prob in get_top_k(pred_savornet, k=2):
         st.write(f"**{name}**: {prob:.2%}")
 
     st.subheader("📊 Confidence Comparison")
     fig, axs = plt.subplots(1, 4, figsize=(24, 6), sharey=True)
 
     axs[0].barh(CLASS_NAMES, pred_dense, color="skyblue")
-    axs[0].invert_yaxis()
     axs[0].set_title("DenseNet121")
-
     axs[1].barh(CLASS_NAMES, pred_res, color="orange")
-    axs[1].invert_yaxis()
     axs[1].set_title("ResNet50V2")
-
     axs[2].barh(CLASS_NAMES, pred_ensemble, color="green")
-    axs[2].invert_yaxis()
-    axs[2].set_title("Soft Voting Ensemble")
-
+    axs[2].set_title("Ensemble (Soft Voting)")
     axs[3].barh(CLASS_NAMES, pred_savornet, color="purple")
-    axs[3].invert_yaxis()
     axs[3].set_title("SavorNet (Attention)")
 
     for ax in axs:
+        ax.invert_yaxis()
         ax.set_xlim(0, 1)
         ax.set_xlabel("Probability")
 
     st.pyplot(fig)
 
     st.markdown(f"""
-    ### 📈 Model Performance
-    | Model        | Test Accuracy | Top-1 Confidence |
-    |--------------|---------------|------------------|
-    | DenseNet121  | {DENSENET_ACC:.2f}%       | {pred_dense[top1_idx]*100:.2f}%          |
-    | ResNet50V2   | {RESNET_ACC:.2f}%       | {pred_res[top1_idx]*100:.2f}%          |
-    | Ensemble     | {ENSEMBLE_ACC:.2f}%     | {pred_ensemble[top1_idx]*100:.2f}%      |
-    | **SavorNet** | **{SAVORNET_ACC:.2f}%** | **{pred_savornet[top1_idx]*100:.2f}%**  |
+    ### 📈 Model Performance on This Image
+    | Model        | Test Accuracy | Confidence |
+    |--------------|---------------|------------|
+    | DenseNet121  | {DENSENET_ACC:.2f}%       | {pred_dense[top1_idx]*100:.2f}% |
+    | ResNet50V2   | {RESNET_ACC:.2f}%       | {pred_res[top1_idx]*100:.2f}% |
+    | Ensemble     | {ENSEMBLE_ACC:.2f}%     | {pred_ensemble[top1_idx]*100:.2f}% |
+    | **SavorNet** | **{SAVORNET_ACC:.2f}%** | **{pred_savornet[top1_idx]*100:.2f}%** |
     """)
-
 else:
     st.info("📤 Upload an image to start classification.")
 
@@ -184,18 +176,18 @@ st.markdown("""
 
 ## 📚 About
 
-**SavorNet** is a deep learning-based Ethiopian food classification system. It uses:
+**SavorNet** is a deep learning-based Ethiopian food classification system using:
 - **DenseNet121**
 - **ResNet50V2**
-- **SavorNet**: a novel attention-based fusion model
+- **SavorNet**: an attention-based fusion model
 
-**SavorNet** adaptively fuses features from both CNN backbones using a two-layer attention mechanism, achieving **92.20% accuracy** and **96.10% top-2 accuracy**.
+SavorNet adaptively fuses feature maps from both CNNs using a two-layer attention mechanism.
 
-### 🏆 Accuracies:
+### 🏆 Accuracy Highlights:
 - DenseNet121: 83.12%
 - ResNet50V2: 86.36%
-- Ensemble (Soft Voting): 88.31%
-- **SavorNet (Attention)**: **92.20%**
+- Ensemble: 88.31%
+- **SavorNet (Attention)**: **92.20%**, Top-2: **96.10%**
 
 **Author:** Yoseph Negash  
 **Contact:** yosephn22@gmail.com  

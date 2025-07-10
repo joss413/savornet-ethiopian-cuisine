@@ -1,6 +1,6 @@
-# DensResNet: Ethiopian Cuisine Classifier 🍽️🇪🇹
+# SavorNet: Ethiopian Cuisine Classifier 🍽️🇪🇹
 
-**DensResNet** is a deep learning-powered web application for classifying 11 traditional Ethiopian dishes using an ensemble of two powerful CNN architectures: **DenseNet121** and **ResNet50V2**. The model uses **soft voting** to combine predictions and improve classification accuracy.
+**DensResNet** is a state-of-the-art deep learning web application for classifying 11 traditional Ethiopian dishes. It leverages an adaptive attention fusion mechanism that combines features from DenseNet121 and ResNet50V2 using a two-layer attention network for optimal accuracy and interpretability.
 
 ---
 
@@ -10,6 +10,7 @@ Upload an image of Ethiopian food and the model will return top-2 predictions fr
 - **DenseNet121**
 - **ResNet50V2**
 - **Soft Voting Ensemble**
+- **SavorNet Attention Fusion**
 
 It also shows bar chart visualizations of all class probabilities and a performance summary table.
 
@@ -28,7 +29,7 @@ It also shows bar chart visualizations of all class probabilities and a performa
 - **DenseNet121** trained on Ethiopian food dataset  
 - **ResNet50V2** trained on the same dataset  
 - **Soft Voting** ensemble strategy for improved prediction confidence
-
+- **SavorNet (Attention Fusion)** Custom 2-layer attention module that adaptively fuses features from both models
 ---
 
 ## 📊 Test Accuracy
@@ -37,8 +38,8 @@ It also shows bar chart visualizations of all class probabilities and a performa
 |--------------|---------------|
 | DenseNet121  | 83.12%        |
 | ResNet50V2   | 86.36%        |
-| Ensemble     | **88.31%**    |
-
+| Ensemble     | 88.31%        |
+| SavorNet     | **92.20%%**   |
 ---
 
 ## 🗂️ Classes
@@ -49,8 +50,8 @@ beyaynetu, chechebsa, doro_wat, firfir, genfo,kiki1, kitfo, shekla_tibs, shiro_w
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/Ethiopian_cuisine_classification.git
-   cd Ethiopian_cuisine_classification
+   git clone https://github.com/yourusername/savornet-ethiopian-cuisine.git
+   cd savornet-ethiopian-cuisine
    ```
 2. **Install dependencies:**:   
    ```commandline
@@ -59,7 +60,7 @@ beyaynetu, chechebsa, doro_wat, firfir, genfo,kiki1, kitfo, shekla_tibs, shiro_w
    ```
 3. **Run the Streamlit app:**:   
    ```commandline
-    streamlit run denserestnet_app.py
+    streamlit run savornet_app.py
    ```
 
 ## 📐 Input Format

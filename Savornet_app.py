@@ -5,7 +5,7 @@ import requests
 import os
 import matplotlib.pyplot as plt
 from PIL import Image
-
+import zipfile
 # App Configuration
 st.set_page_config(page_title="SavorNet: Ethiopian Food Classifier", layout="wide")
 st.title("🍲 SavorNet: Ethiopian Cuisine Classifier")
@@ -32,30 +32,52 @@ SAVORNET_TOP2 = 96.10
 def load_models():
     dense_path = "dense_final_model.h5"
     resnet_path = "resnet50v2_final4_model.h5"
-    savornet_path = "singletest_attention_model.h5"
+
+    # Change this to your zipped SavedModel filename
+    savornet_zip = "singletest_attention_model_tf.zip"
+    savornet_dir = "singletest_attention_model_tf"
 
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
     dense_url = f"https://huggingface.co/{REPO_ID}/resolve/main/{dense_path}"
     resnet_url = f"https://huggingface.co/{REPO_ID}/resolve/main/{resnet_path}"
-    savornet_url = f"https://huggingface.co/{REPO_ID}/resolve/main/{savornet_path}"
+    savornet_url = f"https://huggingface.co/{REPO_ID}/resolve/main/{savornet_zip}"
 
     try:
-        for path, url, name in [
-            (dense_path, dense_url, "DenseNet"),
-            (resnet_path, resnet_url, "ResNet"),
-            (savornet_path, savornet_url, "SavorNet"),
-        ]:
-            if not os.path.exists(path):
-                st.info(f"🔽 Downloading {name} model from Hugging Face...")
-                with requests.get(url, headers=headers, stream=True) as r:
-                    r.raise_for_status()
-                    with open(path, "wb") as f:
-                        for chunk in r.iter_content(chunk_size=8192):
-                            f.write(chunk)
+        # Download DenseNet model if missing
+        if not os.path.exists(dense_path):
+            st.info("🔽 Downloading DenseNet model from Hugging Face...")
+            with requests.get(dense_url, headers=headers, stream=True) as r:
+                r.raise_for_status()
+                with open(dense_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
 
+        # Download ResNet model if missing
+        if not os.path.exists(resnet_path):
+            st.info("🔽 Downloading ResNet model from Hugging Face...")
+            with requests.get(resnet_url, headers=headers, stream=True) as r:
+                r.raise_for_status()
+                with open(resnet_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+        # Download and extract SavorNet TF SavedModel zip if missing
+        if not os.path.exists(savornet_dir):
+            st.info("🔽 Downloading SavorNet TF SavedModel zip from Hugging Face...")
+            with requests.get(savornet_url, headers=headers, stream=True) as r:
+                r.raise_for_status()
+                with open(savornet_zip, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            st.info("📂 Extracting SavorNet model...")
+            with zipfile.ZipFile(savornet_zip, "r") as zip_ref:
+                zip_ref.extractall(".")
+            os.remove(savornet_zip)  # clean up zip after extraction
+
+        # Load models
         densenet = tf.keras.models.load_model(dense_path)
         resnet = tf.keras.models.load_model(resnet_path)
-        savornet = tf.keras.models.load_model(savornet_path)
+        savornet = tf.keras.models.load_model(savornet_dir)  # <-- load SavedModel dir
 
         return densenet, resnet, savornet
 

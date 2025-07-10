@@ -20,7 +20,7 @@ It also shows bar chart visualizations of all class probabilities and a performa
 
 | Upload Section | Prediction Output | Probability Charts |
 |----------------|-------------------|--------------------|
-| ![upload](images/interface1.png) | ![results](images/interface2.png) | ![charts](images/interface3.png) |
+| ![upload](images/interface1.jpg) | ![results](images/interface2.jpg) | ![charts](images/interface3.jpg) |
 
 ---
 
